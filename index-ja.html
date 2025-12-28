@@ -1,0 +1,253 @@
+<html lang="ja">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>NT2 負の値テスト（Firefox）</title>
+	</head>
+	<style>
+	body {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 20px;
+		font-family: system-ui, -apple-system, sans-serif;
+		line-height: 1.6;
+	}
+
+	code {
+		background: #f4f4f4;
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-family: "Courier New", monospace;
+	}
+
+	pre {
+		background: #f4f4f4;
+		padding: 15px;
+		border-radius: 5px;
+		overflow-x: auto;
+	}
+
+	kbd {
+		background: #333;
+		color: white;
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-size: 0.9em;
+	}
+	</style>
+	<body>
+		<article>
+			<header>
+				<h1>NT2 負の値テスト（Firefox）</h1>
+				<p>
+					<time datetime="2025-12-28">2025-12-28</time>
+					<a href="https://github.com/Mimori256" target="_blank">Mimori</a>
+				</p>
+				<p>
+					<a href="index.html">English</a>
+				</p>
+			</header>
+			<section>
+				<h2>概要</h2>
+				<ul>
+					<li>
+						Navigation Timing Level 2 はメモリキャッシュから読み込まれたドキュメントに対してタイミング属性に <code>-1</code> を返す。
+					</li>
+					<li>
+						<strong>ブラウザ：</strong>Firefox 146.0.1
+					</li>
+					<li>
+						<strong>OS：</strong>Windows 11 24H2 OS Build 26100.7462
+					</li>
+				</ul>
+			</section>
+			<section>
+				<h2>再現手順</h2>
+				<ol>
+					<li>
+						Firefox をプライベートモードで開く（キャッシュとブラウザ拡張機能の影響を防ぐため。通常モードでテストしても結果は同じ）
+					</li>
+					<li>
+						<a href="https://mimori256.github.io/nt2-negative-firefox/"
+							>https://mimori256.github.io/nt2-negative-firefox/</a
+						>（このウェブページ）を開く
+					</li>
+					<li>
+						<code>Result</code> 要素の出力を確認する。<code>transferSize</code> の値が正の値であることを確認する。これはドキュメントがメモリキャッシュから読み込まれていないことを意味する。
+					</li>
+					<li>
+						アドレスバーをクリックして <kbd>Enter</kbd> キーを押してページを再度読み込む。（<code>navType</code> は <code>navigate</code> になるはず）
+					</li>
+					<li>
+						<code>result</code> 要素の出力を確認する。<code>transferSize</code> の値がゼロであることを確認する。これはドキュメントがメモリキャッシュから読み込まれたことを意味する。
+					</li>
+					<li>
+						<code>responseStart</code>、<code>fetchStart</code>、<code>requestStart</code>、<code>responseEnd</code> の値を確認する。時々、これらの値が <code>-1</code> になる。
+					</li>
+				</ol>
+			</section>
+			<section>
+				<h2>Result</h2>
+				<pre id="result"></pre>
+			</section>
+
+			<section>
+				<h2>期待される結果（仕様に基づく）</h2>
+				<p>
+					Navigation Timing Level 2 仕様：
+					<a href="https://www.w3.org/TR/navigation-timing-2/" target="_blank"
+						>https://www.w3.org/TR/navigation-timing-2/</a
+					>
+				</p>
+
+				<section>
+					<h3>タイミング属性</h3>
+					<dl>
+						<dt>
+							<code>requestStart</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-requeststart"
+							>
+								<p>
+									この属性は、ユーザーエージェントがサーバーから、または HTTP キャッシュから、またはローカルリソースから現在のドキュメントのリクエストを開始する直前の時刻を返す。
+								</p>
+							</blockquote>
+						</dd>
+
+						<dt>
+							<code>responseStart</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-responsestart"
+							>
+								<p>
+									この属性は、ユーザーエージェントがサーバーから、または HTTP キャッシュから、またはローカルリソースからレスポンスの最初のバイトを受け取った直後の時刻を返す。
+								</p>
+							</blockquote>
+						</dd>
+
+						<dt>
+							<code>fetchStart</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-fetchstart"
+							>
+								<p>
+									新しいリソースを「GET」リクエストメソッドを使用してフェッチする場合、fetchStart はユーザーエージェントが HTTP キャッシュの確認を開始する直前の時刻を返す。それ以外の場合は、ユーザーエージェントがリソースのフェッチを開始する時刻を返す。
+								</p>
+							</blockquote>
+						</dd>
+
+						<dt>
+							<code>responseEnd</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-responseend"
+							>
+								<p>
+									この属性は、ユーザーエージェントが現在のドキュメントの最後のバイトを受け取った直後、または転送接続が閉じられた直前のいずれか早い方の時刻を返す。ここでのドキュメントは、サーバー、HTTP キャッシュ、またはローカルリソースから受け取ることができる。
+								</p>
+							</blockquote>
+						</dd>
+					</dl>
+				</section>
+
+				<section>
+					<h3>問題点</h3>
+					<p>仕様では以下を定義していない：</p>
+					<ul>
+						<li>負の値</li>
+						<li>
+							<code>-1</code> を sentinel value とすること
+						</li>
+						<li>キャッシュされたリソース読み込みの値の省略</li>
+					</ul>
+					<p>
+						<strong>したがって：</strong>
+					</p>
+					<ul>
+						<li>
+							<code>-1</code> を返すことは仕様非準拠である
+						</li>
+						<li>キャッシュされたナビゲーションでも有効なタイムスタンプを返すべきである</li>
+					</ul>
+				</section>
+			</section>
+
+			<section>
+				<h2>関連する問題（相互参照）</h2>
+				<p>
+					WebKit では非常に似た問題が報告されており、Navigation Timing Level 2 がメモリキャッシュから提供されるドキュメントに対して負のタイミング値を返す。
+				</p>
+
+				<article>
+					<h3>WebKit バグ</h3>
+					<p>
+						"Navigation Timing L2 often returns negative timing values for documents served from memory cache" 
+					</p>
+					<p>
+						<a
+							href="https://bugs.webkit.org/show_bug.cgi?id=258014"
+							target="_blank"
+							>https://bugs.webkit.org/show_bug.cgi?id=258014</a
+						>
+					</p>
+				</article>
+
+				<article>
+					<h3>RUM コミュニティグループの議論</h3>
+					<p>
+						<a href="https://github.com/w3c-cg/rum/issues/1" target="_blank"
+							>https://github.com/w3c-cg/rum/issues/1</a
+						>
+					</p>
+				</article>
+			</section>
+		</article>
+
+		<footer>
+			<p>
+				リポジトリ：
+				<a
+					href="https://github.com/Mimori256/nt2-negative-firefox"
+					target="_blank"
+					>https://github.com/Mimori256/nt2-negative-firefox</a
+				>
+			</p>
+		</footer>
+
+		<script>
+		function dump(label) {
+			const nav = performance.getEntriesByType('navigation')[0];
+			const data = {
+				label,
+				time: new Date().toISOString(),
+				navType: nav?.type ?? null,
+				responseStart: nav?.responseStart ?? null,
+				fetchStart: nav?.fetchStart ?? null,
+				requestStart: nav?.requestStart ?? null,
+				responseEnd: nav?.responseEnd ?? null,
+				domContentLoadedEventEnd: nav?.domContentLoadedEventEnd ?? null,
+				loadEventEnd: nav?.loadEventEnd ?? null,
+				transferSize: nav?.transferSize ?? null,
+				userAgent: navigator.userAgent,
+			};
+
+			document.getElementById('result').textContent = JSON.stringify(
+				data,
+				null,
+				2,
+			);
+			console.log(data);
+		}
+
+		window.addEventListener('load', () => dump('load'));
+		</script>
+	</body>
+</html>
+

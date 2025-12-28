@@ -1,0 +1,277 @@
+<html lang="en">
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>NT2 Negative Value Test in Firefox</title>
+	</head>
+	<style>
+	body {
+		max-width: 800px;
+		margin: 0 auto;
+		padding: 20px;
+		font-family: system-ui, -apple-system, sans-serif;
+		line-height: 1.6;
+	}
+
+	code {
+		background: #f4f4f4;
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-family: "Courier New", monospace;
+	}
+
+	pre {
+		background: #f4f4f4;
+		padding: 15px;
+		border-radius: 5px;
+		overflow-x: auto;
+	}
+
+	kbd {
+		background: #333;
+		color: white;
+		padding: 2px 6px;
+		border-radius: 3px;
+		font-size: 0.9em;
+	}
+	</style>
+	<body>
+		<article>
+			<header>
+				<h1>NT2 Negative Value Test in Firefox</h1>
+				<p>
+					<time datetime="2025-12-28">2025-12-28</time>
+					by <a href="https://github.com/Mimori256" target="_blank">Mimori</a>
+				</p>
+			</header>
+			<section>
+				<h2>Summary</h2>
+				<ul>
+					<li>
+						Navigation Timing Level 2 returns <code>-1</code>for timing
+						attributes when document is loaded from memory cache.
+					</li>
+					<li>
+						<strong>Browser:</strong>Firefox 146.0.1
+					</li>
+					<li>
+						<strong>OS:</strong>Windows 11 24H2 OS Build 26100.7462
+					</li>
+				</ul>
+			</section>
+			<section>
+				<h2>How to reproduce</h2>
+				<ol>
+					<li>
+						Open Firefox in private mode to prevent the effect of cache and
+						browser extensions. (I tested it in normal mode as well but the
+						result is the same)
+					</li>
+					<li>
+						Open
+						<a href="https://mimori256.github.io/nt2-negative-firefox/"
+							>https://mimori256.github.io/nt2-negative-firefox/</a
+						>(This webpage)
+					</li>
+					<li>
+						Check the output in the <code>Result</code>element. Make sure to
+						check the value of <code>transferSize</code>is positive, which means
+						the document is not loaded from memory cache.
+					</li>
+					<li>
+						Click on the address bar and press <kbd>Enter</kbd>to load the page
+						again. (the <code>navType</code>should be <code>navigate</code>)
+					</li>
+					<li>
+						Check the output in the <code>Result</code>element. Make sure to
+						check the value of <code>transferSize</code>is zero, which means the
+						document is loaded from memory cache.
+					</li>
+					<li>
+						Observe the value of <code>responseStart</code>,
+						<code>fetchStart</code>, <code>requestStart</code>and
+						<code>responseEnd</code>. Sometimes the values become
+						<code>-1</code>
+					</li>
+				</ol>
+			</section>
+			<section>
+				<h2>Result</h2>
+				<pre id="result"></pre>
+			</section>
+
+			<section>
+				<h2>Expected Results (Specification-based)</h2>
+				<p>
+					Navigation Timing Level 2 Specification:
+					<a href="https://www.w3.org/TR/navigation-timing-2/" target="_blank"
+						>https://www.w3.org/TR/navigation-timing-2/</a
+					>
+				</p>
+
+				<section>
+					<h3>Timing Attributes</h3>
+					<dl>
+						<dt>
+							<code>requestStart</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-requeststart"
+							>
+								<p>
+									This attribute must return the time immediately before the
+									user agent starts requesting the current document from the
+									server, or from the HTTP cache or from local resources.
+								</p>
+							</blockquote>
+						</dd>
+
+						<dt>
+							<code>responseStart</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-responsestart"
+							>
+								<p>
+									This attribute must return the time immediately after the user
+									agent receives the first byte of the response from the server,
+									or from the HTTP cache or from local resources.
+								</p>
+							</blockquote>
+						</dd>
+
+						<dt>
+							<code>fetchStart</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-fetchstart"
+							>
+								<p>
+									If the new resource is to be fetched using a "GET" request
+									method, fetchStart must return the time immediately before the
+									user agent starts checking the HTTP cache. Otherwise, it must
+									return the time when the user agent starts fetching the
+									resource.
+								</p>
+							</blockquote>
+						</dd>
+
+						<dt>
+							<code>responseEnd</code>
+						</dt>
+						<dd>
+							<blockquote
+								cite="https://www.w3.org/TR/navigation-timing-2/#dom-performancenavigationtiming-responseend"
+							>
+								<p>
+									This attribute must return the time immediately after the user
+									agent receives the last byte of the current document or
+									immediately before the transport connection is closed,
+									whichever comes first. The document here can be received
+									either from the server, the HTTP cache or from local
+									resources.
+								</p>
+							</blockquote>
+						</dd>
+					</dl>
+				</section>
+
+				<section>
+					<h3>Issues</h3>
+					<p>The specification does not define:</p>
+					<ul>
+						<li>negative values</li>
+						<li>
+							<code>-1</code>as a sentinel value
+						</li>
+						<li>omission of values for cached resource loads</li>
+					</ul>
+					<p>
+						<strong>Therefore:</strong>
+					</p>
+					<ul>
+						<li>
+							Returning <code>-1</code>is non-conforming
+						</li>
+						<li>Cached navigation should still return valid timestamps</li>
+					</ul>
+				</section>
+			</section>
+
+			<section>
+				<h2>Related Issues (Cross-reference)</h2>
+				<p>
+					A very similar issue has been reported in WebKit, where Navigation
+					Timing Level 2 returns negative timing values when the document is
+					served from memory cache:
+				</p>
+
+				<article>
+					<h3>WebKit Bug</h3>
+					<p>
+						"Navigation Timing L2 often returns negative timing values for
+						documents served from memory cache"
+					</p>
+					<p>
+						<a
+							href="https://bugs.webkit.org/show_bug.cgi?id=258014"
+							target="_blank"
+							>https://bugs.webkit.org/show_bug.cgi?id=258014</a
+						>
+					</p>
+				</article>
+
+				<article>
+					<h3>RUM Community Group Discussion</h3>
+					<p>
+						<a href="https://github.com/w3c-cg/rum/issues/1" target="_blank"
+							>https://github.com/w3c-cg/rum/issues/1</a
+						>
+					</p>
+				</article>
+			</section>
+		</article>
+
+		<footer>
+			<p>
+				Repository:
+				<a
+					href="https://github.com/Mimori256/nt2-negative-firefox"
+					target="_blank"
+					>https://github.com/Mimori256/nt2-negative-firefox</a
+				>
+			</p>
+		</footer>
+
+		<script>
+		function dump(label) {
+			const nav = performance.getEntriesByType('navigation')[0];
+			const data = {
+				label,
+				time: new Date().toISOString(),
+				navType: nav?.type ?? null,
+				responseStart: nav?.responseStart ?? null,
+				fetchStart: nav?.fetchStart ?? null,
+				requestStart: nav?.requestStart ?? null,
+				responseEnd: nav?.responseEnd ?? null,
+				domContentLoadedEventEnd: nav?.domContentLoadedEventEnd ?? null,
+				loadEventEnd: nav?.loadEventEnd ?? null,
+				transferSize: nav?.transferSize ?? null,
+				userAgent: navigator.userAgent,
+			};
+
+			document.getElementById('result').textContent = JSON.stringify(
+				data,
+				null,
+				2,
+			);
+			console.log(data);
+		}
+
+		window.addEventListener('load', () => dump('load'));
+		</script>
+	</body>
+</html>
